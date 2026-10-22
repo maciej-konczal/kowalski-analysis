@@ -13,10 +13,11 @@ Status: early. Used every day on one real product since 2026-10-09; expect chang
 
 ## Install
 
-In Claude Code (2.1.275 or later):
+Requires Claude Code and Node 22 or later.
 
-```
-/plugin install kowalski --marketplace maciej-konczal/kowalski-analysis
+```sh
+claude plugin marketplace add maciej-konczal/kowalski-analysis
+claude plugin install kowalski@kowalski
 ```
 
 Other ways: [INSTALL.md](INSTALL.md).
