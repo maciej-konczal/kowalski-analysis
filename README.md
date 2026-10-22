@@ -24,7 +24,7 @@ Other ways: [INSTALL.md](INSTALL.md).
 
 ## How it works
 
-- Skills: `what-to-build`, `product-engineer`, `product-init`, `remember-resource`, `roadmap`, `product-update`.
+- Skills: `what-to-build`, `product-engineer`, `product-init`, `remember-resource`, `roadmap`, `product-update`, `research`.
 - Before new work, `roadmap`, `product-update` and `what-to-build` run `product.mjs check`: planned dates that passed with no outcome, days with commits but no update, and each bet next to its tracker issue.
 - The brain: `.product/` in your product repo (`principles.md`, `users.md`, append-only `bets.jsonl` and `resources.jsonl`, git-ignored `local/` for exact quotes).
 - Design: [docs/specs/2026-10-09-kowalski-design.md](docs/specs/2026-10-09-kowalski-design.md).
