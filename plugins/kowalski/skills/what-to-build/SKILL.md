@@ -43,6 +43,8 @@ no 3-lookup cap here, this is the research step):
 - where the funnel leaks: work that shipped but nobody verified or used
 - open items and open design sections in the repo
 - what the team keeps doing by hand (a repeated manual step is a candidate)
+- outside the team, when the product is new or the map is all `none [U]`: run the
+  research skill and take its proposed candidates
 
 One line per candidate: what it is, who it is for, evidence with source, date and
 a mark (V we ran or measured it, S we read it in notes or docs, U unverified;
