@@ -1,0 +1,13 @@
+{
+  "name": "kowalski",
+  "displayName": "kowalski",
+  "version": "0.1.0",
+  "description": "Product engineering for Claude Code: decide what to build, ship the smallest slice, prove it with what the person sees, and remember what worked.",
+  "author": {
+    "name": "Maciej Kończal",
+    "url": "https://github.com/maciej-konczal/kowalski-analysis"
+  },
+  "repository": "https://github.com/maciej-konczal/kowalski-analysis",
+  "license": "MIT",
+  "keywords": ["product-engineering", "prioritization", "roadmap", "skills"]
+}

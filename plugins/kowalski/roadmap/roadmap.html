@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap</title>
+<style>
+  :root {
+    --bg: #fafaf9; --panel: #ffffff; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4;
+    --accent: #2563eb; --now: #2563eb; --next: #7c3aed; --later: #78716c; --done: #16a34a; --no: #dc2626;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c0a09; --panel: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #292524;
+      --accent: #60a5fa; --now: #60a5fa; --next: #a78bfa; --later: #a8a29e; --done: #4ade80; --no: #f87171;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0a09; --panel: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #292524;
+    --accent: #60a5fa; --now: #60a5fa; --next: #a78bfa; --later: #a8a29e; --done: #4ade80; --no: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 20px 16px 8px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 18px; margin: 0; }
+  .counts { color: var(--muted); }
+  nav { margin-left: auto; display: flex; gap: 4px; }
+  nav button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 4px 12px; border-radius: 999px; cursor: pointer; }
+  nav button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+  main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 40px; }
+  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 760px) { .board, .grid { grid-template-columns: minmax(0, 1fr); } nav { margin-left: 0; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-height: 80px; }
+  section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 10px; color: var(--muted); display: flex; justify-content: space-between; }
+  section h2 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .card { display: block; width: 100%; text-align: left; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
+  .what { font-weight: 600; }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .test { font-size: 12px; margin-top: 6px; }
+  .mark { font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  .empty-col { color: var(--muted); font-size: 12px; }
+  .list { margin-top: 16px; }
+  .list li { margin-bottom: 4px; }
+  #empty { text-align: center; color: var(--muted); padding: 60px 16px; }
+  dialog { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); max-width: min(640px, calc(100vw - 32px)); width: 100%; }
+  dialog::backdrop { background: rgb(0 0 0 / .4); }
+  dialog ol { padding-left: 20px; }
+  dialog li { margin-bottom: 10px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Roadmap</h1>
+  <span class="counts" id="counts"></span>
+  <nav role="tablist">
+    <button role="tab" aria-selected="true" data-view="board">Board</button>
+    <button role="tab" aria-selected="false" data-view="grid">Impact vs effort</button>
+  </nav>
+</header>
+<main>
+  <p id="empty" hidden>No bets yet. Run what-to-build to map candidates.</p>
+  <div id="board" class="board"></div>
+  <div id="grid" hidden>
+    <div class="grid" id="quadrants"></div>
+    <div class="list" id="unscored"></div>
+    <div class="list" id="saidno"></div>
+  </div>
+</main>
+<dialog id="detail"><div id="detail-body"></div><form method="dialog"><button>Close</button></form></dialog>
+<script type="application/json" id="data">{{DATA}}</script>
+<script>
+  const data = JSON.parse(document.getElementById('data').textContent);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) k === 'class' ? (n.className = v) : n.setAttribute(k, v);
+    for (const kid of kids) if (kid != null) n.append(kid);
+    return n;
+  };
+  const RANK = { V: 3, S: 2, U: 1 };
+  const strongest = (b) => (b.evidence || []).map((e) => e.mark).sort((a, c) => (RANK[c] || 0) - (RANK[a] || 0))[0];
+
+  function card(b) {
+    const ev = (b.evidence || []).length;
+    const mark = strongest(b);
+    const c = el('button', { class: 'card', type: 'button' },
+      el('div', { class: 'what' }, b.what),
+      el('div', { class: 'meta' },
+        [b.for, b.owner && 'owner ' + b.owner, b.status].filter(Boolean).join(' · ') + ' · ',
+        ev ? el('span', { class: 'mark' }, ev + ' evidence' + (mark ? ' [' + mark + ']' : '')) : 'no evidence'),
+      b.test ? el('div', { class: 'test' }, 'Test: ' + b.test + (b.drop_if ? ' · drop if ' + b.drop_if : '')) : null);
+    c.addEventListener('click', () => showHistory(b.id));
+    return c;
+  }
+
+  function column(title, color, bets) {
+    const s = el('section', {}, el('h2', {}, el('span', {}, el('span', { class: 'dot', style: 'background:' + color }), title), el('span', {}, String(bets.length))));
+    if (!bets.length) s.append(el('div', { class: 'empty-col' }, 'Nothing here'));
+    bets.forEach((b) => s.append(card(b)));
+    return s;
+  }
+
+  function showHistory(id) {
+    const body = document.getElementById('detail-body');
+    body.replaceChildren(el('h2', {}, id));
+    const ol = el('ol');
+    for (const line of (data.history[id] || [])) {
+      const rest = Object.entries(line).filter(([k]) => !['id', 'at', 'status'].includes(k))
+        .map(([k, v]) => k + ': ' + (typeof v === 'string' ? v : JSON.stringify(v))).join('\n');
+      ol.append(el('li', {}, el('strong', {}, line.at + ' ' + line.status), el('pre', { style: 'white-space:pre-wrap;font:12px ui-monospace,monospace' }, rest)));
+    }
+    body.append(ol);
+    document.getElementById('detail').showModal();
+  }
+
+  const c = data.columns;
+  const open = c.now.length + c.next.length + c.later.length;
+  document.getElementById('counts').textContent = data.total + ' bets · ' + open + ' open · ' + c.done.length + ' done · ' + data.saidNo.length + ' said no';
+  if (!data.total) {
+    document.getElementById('empty').hidden = false;
+    document.getElementById('board').hidden = true;
+  }
+  document.getElementById('board').append(
+    column('Now', 'var(--now)', c.now), column('Next', 'var(--next)', c.next),
+    column('Later', 'var(--later)', c.later), column('Done', 'var(--done)', c.done));
+
+  const Q = [['high-low', 'High impact, low effort: do first'], ['high-high', 'High impact, high effort: test first'],
+             ['low-low', 'Low impact, low effort'], ['low-high', 'Low impact, high effort: say no']];
+  for (const [key, title] of Q) document.getElementById('quadrants').append(column(title, 'var(--accent)', data.grid[key]));
+  if (data.unscored.length) {
+    const ul = el('ul');
+    data.unscored.forEach((b) => ul.append(el('li', {}, b.what + ' (' + b.status + ')')));
+    document.getElementById('unscored').append(el('h2', {}, 'Unscored: no impact or effort yet'), ul);
+  }
+  if (data.saidNo.length) {
+    const ul = el('ul');
+    data.saidNo.forEach((b) => ul.append(el('li', {}, b.what + ': no, by "' + (b.principle || '?') + '"')));
+    document.getElementById('saidno').append(el('h2', {}, 'Said no'), ul);
+  }
+
+  document.querySelectorAll('nav button').forEach((btn) => btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
+    const grid = btn.dataset.view === 'grid';
+    document.getElementById('grid').hidden = !grid;
+    document.getElementById('board').hidden = grid || !data.total;
+  }));
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+work/
+.product/local/
+node_modules/
+.DS_Store
+plugins/kowalski/evals/results/

@@ -1,0 +1,29 @@
+schema_version: "1.0"
+name: build-picked-bet
+description: Asked to build an already-picked bet and "go ahead", product-engineer still writes the brief before any code, starting from the bet.
+tags: [product-engineer, e2e]
+expected_outcome: A brief appears in chat before the first edit and before the bet is set to building.
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: "This is a food bank shift planner (app.mjs). Build b-1. Go ahead and build the smallest slice, show me the proof, and record shipped when done."
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Edit, Write, "Bash(node:*)"]
+runs: 3
+graders:
+  - type: tool_used
+    name: skill-fired
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?product-engineer"'
+  - type: regex
+    name: brief-before-code
+    target: trace
+    # the building append with wrong_if appears before any Edit or Write tool call
+    pattern: '^(?:(?!"name":"(?:Edit|Write)")[\s\S])*?status[^\n]{0,40}building[^\n]{0,4000}?wrong_if'
+    match: contains
+  - type: llm
+    name: brief-shown
+    criteria: |
+      PASS if the final reply shows the user the brief as readable text, with at least Who, Today, Evidence, Slice and Wrong if lines (not only "brief recorded" or a reference to a JSON field).
+
+      FAIL if the final reply does not show those brief lines.
