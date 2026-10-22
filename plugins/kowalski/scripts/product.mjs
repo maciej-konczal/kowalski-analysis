@@ -14,7 +14,7 @@
 //   node product.mjs page-url <url>             remember where the updates page is published (.product/page.json)
 //   node product.mjs check                      what needs a person first: passed dates with no outcome, days with commits but no update, open bets and their tracker issue
 import { existsSync, readFileSync, appendFileSync, mkdirSync, writeFileSync, copyFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
@@ -239,8 +239,8 @@ export function groupRoadmap(bets) {
   return { total: bets.length, columns, grid, unscored, saidNo };
 }
 
-export function renderRoadmap(bets, template, history = {}) {
-  const data = JSON.stringify({ ...groupRoadmap(bets), history }).replace(/</g, '\\u003c');
+export function renderRoadmap(bets, template, history = {}, name = '') {
+  const data = JSON.stringify({ ...groupRoadmap(bets), history, name }).replace(/</g, '\\u003c');
   return template.replace('{{DATA}}', () => data);
 }
 
@@ -623,7 +623,9 @@ function main(argv) {
     const template = readFileSync(fileURLToPath(new URL('../roadmap/roadmap.html', import.meta.url)), 'utf8');
     const out = join(product, 'local', 'roadmap.html');
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, renderRoadmap(currentBets(lines), template, history));
+    const vision = join(product, 'vision.md');
+    const name = (existsSync(vision) && readVision(readFileSync(vision, 'utf8')).title) || basename(dirname(product));
+    writeFileSync(out, renderRoadmap(currentBets(lines), template, history, name));
     process.stdout.write(out + '\n');
     return;
   }
