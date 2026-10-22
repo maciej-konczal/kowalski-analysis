@@ -189,7 +189,8 @@
   const did = (b) => evidence(b).filter((e) => e.kind === 'behavior').length;
   const initials = (name) => String(name).split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
   const pretty = (name) => /^[a-z0-9-]+$/.test(name) ? name.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ') : name;
-  const host = (src) => { try { return new URL(src).hostname.replace(/^www\./, ''); } catch { return null; } };
+  // Only http(s) sources become links; anything else stays plain text.
+  const host = (src) => { try { const u = new URL(src); return /^https?:$/.test(u.protocol) ? u.hostname.replace(/^www\./, '') : null; } catch { return null; } };
 
   function chips(b) {
     const out = [];
@@ -246,7 +247,7 @@
       evidence(b).length ? el('ul', { class: 'evlist' }, evidence(b).map((e) => el('li', {},
         el('span', { class: 'k ' + e.kind }, e.kind === 'behavior' ? 'did' : 'said'), e.says,
         el('span', { class: 'src' },
-          host(e.source) ? el('a', { href: e.source, target: '_blank', rel: 'noopener' }, host(e.source)) : e.source,
+          host(e.source) ? el('a', { href: e.source, target: '_blank', rel: 'noopener noreferrer' }, host(e.source)) : e.source,
           ' · ' + e.date + ' · ' + ({ V: 'verified', S: 'read', U: 'unverified' }[e.mark] || e.mark)))))
         : el('p', { class: 'hint' }, 'No evidence recorded.'),
       el('details', {}, el('summary', {}, 'History (' + (data.history[b.id] || []).length + ((data.history[b.id] || []).length === 1 ? ' line)' : ' lines)')),
