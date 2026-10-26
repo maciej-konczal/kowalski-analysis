@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Roadmap</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 21c-1.2-2.6-1.6-5.6-1.2-8.6C5.4 7.4 8.3 4 12.2 4c2.7 0 4.6 1.4 5.4 3.4L22 9l-4.4.9'/%3E%3Cpath d='M17.6 9.9c.6 3.6 1.6 7.6 3.4 11.1'/%3E%3Cpath d='M17.6 9.9c-3.4-.1-6.2 2-7.1 5.6-.4 1.8-.3 3.7.2 5.5'/%3E%3Ccircle cx='13.8' cy='7.6' r='.9' fill='%2371717a' stroke='none'/%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #f6f5f2; --glow: #e9e4ff; --panel: #ffffff; --raised: #ffffff; --ink: #18181b; --muted: #71717a; --faint: #a1a1aa;
@@ -128,14 +129,31 @@
   .close { position: sticky; bottom: 0; display: flex; justify-content: flex-end; padding: 12px 24px 18px; background: linear-gradient(transparent, var(--panel) 40%); }
   .close button { font: inherit; border: 1px solid var(--line); background: var(--raised); color: var(--ink); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
   [hidden] { display: none !important; }
+  /* The shared page: read by people outside the team, so plain words and an obvious click. */
+  .lede { margin: 8px 0 0; max-width: 560px; color: var(--muted); font-size: 15px; }
+  .lede b { color: var(--ink); font-weight: 600; }
+  .more { color: var(--muted); font-size: 12px; transition: color .12s ease; }
+  .card:hover .more, .card:focus-visible .more { color: var(--ink); }
+  .nos { margin-top: 18px; }
+  .nos h2 { margin: 0 0 10px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .nos .row { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .nos .card { margin: 0; opacity: .85; }
+  .answer { margin: 0 0 6px; font-size: 14px; }
+  .by { display: flex; justify-content: center; padding: 0 0 40px; }
+  .by a { display: inline-flex; align-items: center; gap: 8px; color: var(--faint); text-decoration: none; font-size: 12px; transition: color .12s ease; }
+  .by a:hover, .by a:focus-visible { color: var(--ink); }
+  .by b { font-weight: 650; }
+  .by svg { width: 18px; height: 18px; }
+  .where { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
-      <div class="eyebrow">Roadmap</div>
+      <div class="eyebrow" id="eyebrow">Roadmap</div>
       <h1 id="name">Roadmap</h1>
+      <p class="lede" id="lede" hidden>What we are building now, what comes next, and what we decided not to do. <b>Click any card for the details.</b></p>
     </div>
     <div class="stats" id="stats"></div>
   </header>
@@ -154,6 +172,12 @@
       <div class="aside" id="aside"></div>
     </div>
   </main>
+  <footer class="by">
+    <a href="https://github.com/maciej-konczal/kowalski-analysis" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21c-1.2-2.6-1.6-5.6-1.2-8.6C5.4 7.4 8.3 4 12.2 4c2.7 0 4.6 1.4 5.4 3.4L22 9l-4.4.9"/><path d="M17.6 9.9c.6 3.6 1.6 7.6 3.4 11.1"/><path d="M17.6 9.9c-3.4-.1-6.2 2-7.1 5.6-.4 1.8-.3 3.7.2 5.5"/><circle cx="13.8" cy="7.6" r=".75" fill="currentColor" stroke="none"/></svg>
+      <span>Roadmap powered by <b>kowalski</b></span>
+    </a>
+  </footer>
 </div>
 <dialog id="detail"><div class="sheet" id="sheet"></div><form method="dialog" class="close"><button autofocus>Close</button></form></dialog>
 <script type="application/json" id="data">{{DATA}}</script>
@@ -177,6 +201,17 @@
   };
   const ACCENT = { building: 'var(--now)', picked: 'var(--next)', candidate: 'var(--later)', shipped: 'var(--done)', kept: 'var(--done)', killed: 'var(--no)' };
 
+  // The shared page is read by people outside the team: plain words, no process vocabulary.
+  const S = data.shared;
+  if (S) for (const [k, t] of Object.entries({ now: 'Building now', next: 'Up next', later: 'Ideas', done: 'Shipped' })) LANE[k].title = t;
+  const VALUE = { high: 'High value', low: 'Lower value' };
+  const SIZE = { low: 'Small effort', high: 'Big effort' };
+  const WHY = { 'high-low': 'Do first: high value for little effort.', 'high-high': 'Worth it, so we test it cheaply before building it all.',
+                'low-low': 'Maybe, when there is time.', 'low-high': 'Not worth the effort for now.' };
+  const when = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric', year: d.slice(0, 4) === today.slice(0, 4) ? undefined : 'numeric' });
+  // "2 serve the meeting loop first" reads as "Serve the meeting loop first".
+  const reason = (p) => { const s = String(p || '').replace(/^\s*\d+[.)]?\s*/, ''); return s ? s[0].toUpperCase() + s.slice(1) : ''; };
+
   // "Short title: the detail" reads as a title and a line under it.
   const split = (what) => {
     const s = String(what || '');
@@ -195,9 +230,9 @@
   function chips(b) {
     const out = [];
     if (b.for) out.push(el('span', { class: 'chip' }, b.for));
-    if (b.impact) out.push(el('span', { class: 'chip' + (b.impact === 'high' ? ' hi' : '') }, b.impact + ' impact'));
-    if (b.effort) out.push(el('span', { class: 'chip' + (b.effort === 'low' ? ' hi' : '') }, b.effort + ' effort'));
-    if (b.by) out.push(el('span', { class: 'chip' + (b.by < today && ['picked', 'building'].includes(b.status) ? ' due' : '') }, 'by ' + b.by));
+    if (b.impact) out.push(el('span', { class: 'chip' + (b.impact === 'high' ? ' hi' : '') }, S ? VALUE[b.impact] : b.impact + ' impact'));
+    if (b.effort) out.push(el('span', { class: 'chip' + (b.effort === 'low' ? ' hi' : '') }, S ? SIZE[b.effort] : b.effort + ' effort'));
+    if (b.by) out.push(el('span', { class: 'chip' + (b.by < today && ['picked', 'building'].includes(b.status) ? ' due' : '') }, 'by ' + (S ? when(b.by) : b.by)));
     if (b.status === 'killed') out.push(el('span', { class: 'chip due' }, 'killed'));
     if (b.status === 'kept') out.push(el('span', { class: 'chip hi' }, 'kept'));
     return out.length ? el('div', { class: 'chips' }, out) : null;
@@ -214,10 +249,11 @@
       el('div', { class: 'foot' },
         ev.length ? el('span', { class: 'ev', title: d + ' about what people do, ' + (ev.length - d) + ' about what they say' },
           ev.map((e) => el('i', { class: e.kind === 'behavior' ? '' : 'w' }))) : null,
-        el('span', {}, ev.length ? (d ? d + ' did' : '') + (d && ev.length - d ? ' · ' : '') + (ev.length - d ? (ev.length - d) + ' said' : '') : 'no evidence yet'),
+        data.shared ? null : el('span', {}, ev.length ? (d ? d + ' did' : '') + (d && ev.length - d ? ' · ' : '') + (ev.length - d ? (ev.length - d) + ' said' : '') : 'no evidence yet'),
         b.ref ? el('span', {}, b.ref) : null,
+        S ? el('span', { class: 'more' }, 'Details →') : null,
         b.owner ? el('span', { class: 'avatar', title: 'owner ' + b.owner }, initials(b.owner)) : null),
-      b.test && !compact ? el('div', { class: 'test' }, el('b', {}, 'Test '), b.test, b.drop_if ? ' · drop if ' + b.drop_if : '') : null);
+      b.test && !compact && !S ? el('div', { class: 'test' }, el('b', {}, 'Test '), b.test, b.drop_if ? ' · drop if ' + b.drop_if : '') : null);
     c.addEventListener('click', () => open(b));
     return c;
   }
@@ -226,12 +262,34 @@
     const L = LANE[key];
     const s = el('section', { class: 'lane' + (bets.length ? '' : ' is-empty') },
       el('h2', {}, el('span', { class: 'dot', style: 'background:' + L.color }), L.title, el('span', { class: 'n' }, String(bets.length))));
-    if (!bets.length) s.append(el('div', { class: 'hint' }, L.hint.map((t, i) => i === 1 ? el('code', {}, t) : t)));
+    if (!bets.length && !data.shared) s.append(el('div', { class: 'hint' }, L.hint.map((t, i) => i === 1 ? el('code', {}, t) : t)));
     bets.forEach((b) => s.append(card(b)));
     return s;
   }
 
+  // A stakeholder's questions, in order: where it stands, why this order, how we will know, when we stop.
+  function openShared(b) {
+    const [title, detail] = split(b.what);
+    const lane = b.status === 'said-no' ? 'Decided not to do' : LANE[{ building: 'now', picked: 'next', candidate: 'later' }[b.status] || 'done'].title;
+    const answer = (h, text) => text ? [el('h3', {}, h), el('p', { class: 'answer' }, text)] : null;
+    const where = [b.owner && 'Owner: ' + b.owner, b.by && 'Due ' + when(b.by), b.impact && VALUE[b.impact], b.effort && SIZE[b.effort]].filter(Boolean);
+    const done = { shipped: 'Shipped; we are watching whether it works.', kept: 'Shipped, and it worked: we kept it.', killed: 'Shipped, and it did not work: we stopped it.' }[b.status];
+    document.getElementById('sheet').replaceChildren(...[
+      el('div', { class: 'eyebrow' }, lane),
+      el('h2', {}, title),
+      detail ? el('p', { class: 'lead' }, detail) : null,
+      where.length ? el('div', { class: 'where' }, where.map((t) => el('span', { class: 'chip' }, t))) : null,
+      answer('Why not', b.status === 'said-no' ? reason(b.principle) : null),
+      answer('Where it stands', done),
+      answer('Why this order', b.impact && b.effort && b.status !== 'said-no' ? WHY[b.impact + '-' + b.effort] : null),
+      answer("How we'll know it works", b.test),
+      answer('We stop if', b.drop_if),
+    ].flat().filter((x) => x != null));
+    document.getElementById('detail').showModal();
+  }
+
   function open(b) {
+    if (S) return openShared(b);
     const [title, detail] = split(b.what);
     const facts = [['Status', b.status], ['For', b.for], ['Owner', b.owner], ['Impact', b.impact], ['Effort', b.effort], ['Reuses', b.reuses],
       ['Test', b.test], ['Drop if', b.drop_if], ['By', b.by], ['Tracker', b.ref], ['Signal', b.signal], ['Outcome', b.outcome], ['Principle', b.principle]]
@@ -243,14 +301,14 @@
       detail ? el('p', { class: 'lead' }, detail) : null,
       el('dl', { class: 'facts' }, facts.map(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))])),
       b.brief ? [el('h3', {}, 'Brief'), el('dl', { class: 'facts' }, Object.entries(b.brief).map(([k, v]) => [el('dt', {}, k.replace('_', ' ')), el('dd', {}, v)]))] : null,
-      el('h3', {}, 'Evidence'),
-      evidence(b).length ? el('ul', { class: 'evlist' }, evidence(b).map((e) => el('li', {},
+      data.shared ? null : el('h3', {}, 'Evidence'),
+      data.shared ? null : evidence(b).length ? el('ul', { class: 'evlist' }, evidence(b).map((e) => el('li', {},
         el('span', { class: 'k ' + e.kind }, e.kind === 'behavior' ? 'did' : 'said'), e.says,
         el('span', { class: 'src' },
           host(e.source) ? el('a', { href: e.source, target: '_blank', rel: 'noopener noreferrer' }, host(e.source)) : e.source,
           ' · ' + e.date + ' · ' + ({ V: 'verified', S: 'read', U: 'unverified' }[e.mark] || e.mark)))))
         : el('p', { class: 'hint' }, 'No evidence recorded.'),
-      el('details', {}, el('summary', {}, 'History (' + (data.history[b.id] || []).length + ((data.history[b.id] || []).length === 1 ? ' line)' : ' lines)')),
+      data.shared ? null : el('details', {}, el('summary', {}, 'History (' + (data.history[b.id] || []).length + ((data.history[b.id] || []).length === 1 ? ' line)' : ' lines)')),
         el('ol', { class: 'hist' }, (data.history[b.id] || []).map((line) => el('li', {}, el('strong', {}, line.at + ' ' + line.status),
           el('pre', {}, Object.entries(line).filter(([k]) => !['id', 'at', 'status', 'evidence', 'what'].includes(k))
             .map(([k, v]) => k + ': ' + (typeof v === 'string' ? v : JSON.stringify(v))).join('\n'))))))].flat(Infinity).filter((x) => x != null));
@@ -258,34 +316,46 @@
   }
 
   const c = data.columns;
+  if (S) {
+    document.querySelector('.legend').hidden = true;
+    document.getElementById('lede').hidden = false;
+    if (data.exported) document.getElementById('eyebrow').textContent = 'Roadmap · updated ' + when(data.exported) + (data.exported.slice(0, 4) === today.slice(0, 4) ? ', ' + data.exported.slice(0, 4) : '');
+    document.querySelector('nav [data-view="grid"]').textContent = 'Value vs effort';
+  }
   const name = data.name ? pretty(data.name) : 'Roadmap';
   document.getElementById('name').textContent = name;
   document.title = name + ' · Roadmap';
-  const all = [...c.now, ...c.next, ...c.later, ...c.done];
+  const all = [...c.now, ...c.next, ...c.later, ...c.done, ...(S ? data.saidNo : [])];
   const evAll = all.flatMap(evidence);
   const stat = (n, label, color) => el('div', { class: 'stat' }, el('b', { style: color ? 'color:' + color : '' }, String(n)), el('span', {}, label));
   document.getElementById('stats').append(
-    stat(c.now.length, 'Now', 'var(--now)'), stat(c.next.length, 'Next', 'var(--next)'), stat(c.later.length, 'Later'),
-    stat(c.done.length, 'Done', 'var(--done)'), stat(evAll.filter((e) => e.kind === 'behavior').length + ' of ' + evAll.length, 'evidence is behavior'));
+    stat(c.now.length, LANE.now.title, 'var(--now)'), stat(c.next.length, LANE.next.title, 'var(--next)'), stat(c.later.length, LANE.later.title),
+    stat(c.done.length, LANE.done.title, 'var(--done)'), S ? '' : stat(evAll.filter((e) => e.kind === 'behavior').length + ' of ' + evAll.length, 'evidence is behavior'));
 
   const board = document.getElementById('board');
   if (!data.total) { document.getElementById('empty').hidden = false; board.hidden = true; }
   const keys = ['now', 'next', 'later', 'done'];
   board.style.gridTemplateColumns = keys.map((k) => c[k].length ? 'minmax(0, 2fr)' : 'minmax(150px, 1fr)').join(' ');
   board.append(...keys.map((k) => lane(k, c[k])));
+  // A "no" with its reason is part of the story for a stakeholder, so it sits under the board.
+  const nos = S && data.saidNo.length ? el('section', { class: 'nos' }, el('h2', {}, 'Decided not to do'), el('div', { class: 'row' }, data.saidNo.map((b) => card(b, true)))) : null;
+  if (nos) board.after(nos);
 
-  const Q = [['high-low', 'Do first', 'High impact, low effort', 'best'], ['high-high', 'Test first', 'High impact, high effort: a cheap test in front'],
-             ['low-low', 'Maybe', 'Low impact, low effort'], ['low-high', 'Say no', 'Low impact, high effort', 'drop']];
+  const Q = S
+    ? [['high-low', 'Do first', 'High value, small effort', 'best'], ['high-high', 'Test first', 'High value, big effort: a cheap test in front'],
+       ['low-low', 'Maybe', 'Lower value, small effort'], ['low-high', 'Not now', 'Lower value, big effort', 'drop']]
+    : [['high-low', 'Do first', 'High impact, low effort', 'best'], ['high-high', 'Test first', 'High impact, high effort: a cheap test in front'],
+       ['low-low', 'Maybe', 'Low impact, low effort'], ['low-high', 'Say no', 'Low impact, high effort', 'drop']];
   const matrix = document.getElementById('matrix');
-  matrix.append(el('div', { class: 'axis y' }, 'Impact'));
+  matrix.append(el('div', { class: 'axis y' }, S ? 'Value' : 'Impact'));
   for (const [key, title, sub, cls] of Q) {
     matrix.append(el('section', { class: 'quad ' + (cls || '') }, el('h3', {}, title, ' ', el('span', { class: 'chip' }, String(data.grid[key].length))), el('p', {}, sub),
       data.grid[key].map((b) => card(b, true))));
   }
   matrix.append(el('div', { class: 'axis x' }, 'Effort'));
   const aside = document.getElementById('aside');
-  if (data.unscored.length) aside.append(el('section', {}, el('h3', {}, 'Unscored: no impact or effort yet'), el('ul', {}, data.unscored.map((b) => el('li', {}, split(b.what)[0] + ' (' + b.status + ')')))));
-  if (data.saidNo.length) aside.append(el('section', {}, el('h3', {}, 'Said no'), el('ul', {}, data.saidNo.map((b) => el('li', {}, split(b.what)[0] + ': no, by ' + (b.principle || '?'))))));
+  if (data.unscored.length) aside.append(el('section', {}, el('h3', {}, S ? 'Not sized yet' : 'Unscored: no impact or effort yet'), el('ul', {}, data.unscored.map((b) => el('li', {}, split(b.what)[0] + (S ? '' : ' (' + b.status + ')'))))));
+  if (data.saidNo.length && !S) aside.append(el('section', {}, el('h3', {}, 'Said no'), el('ul', {}, data.saidNo.map((b) => el('li', {}, split(b.what)[0] + ': no, by ' + (b.principle || '?'))))));
 
   const linked = all.find((b) => '#' + b.id === location.hash);
   if (linked) open(linked);
@@ -296,6 +366,7 @@
     const grid = btn.dataset.view === 'grid';
     document.getElementById('grid').hidden = !grid;
     board.hidden = grid || !data.total;
+    if (nos) nos.hidden = grid;
   }));
 </script>
 </body>

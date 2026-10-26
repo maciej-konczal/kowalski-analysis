@@ -1,7 +1,15 @@
 ---
 name: roadmap
-description: Use when someone asks to see the roadmap, what is in flight, what is next, the bets board, or the impact vs effort grid. Renders the product brain's bets (.product/bets.jsonl) into a local page with a Now / Next / Later / Done board and an impact vs effort grid, and opens it.
+description: Use when someone asks to see the roadmap, what is in flight, what is next, the bets board, or the impact vs effort grid, or to share, send or export the roadmap. Renders the product brain's bets (.product/bets.jsonl) into a local page with a Now / Next / Later / Done board and an impact vs effort grid, and opens it; exports a copy safe to send as one HTML file and as Markdown.
 ---
+
+To share, send or export the roadmap, do only this:
+
+1. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/product.mjs" export` from the product repo. It prints two paths in `.product/local/share/`:
+   - `roadmap.html`: one self-contained file (no network, no install) to attach, drop in Slack or open from Drive. Written for stakeholders: plain lane names, and every card opens its details (where it stands, why this order, how we will know it works, when we stop, why not);
+   - `roadmap.md`: the board as lists and the grid as a mermaid chart, drawn by GitHub, gists and Notion.
+2. Both keep only each bet's id, what, status, impact, effort, owner, date, test, drop_if and the principle behind a no. Evidence, briefs, history, proof, outcomes, "for" and the tracker ref stay out: they hold customer context. Say this in one line, then give both paths.
+3. Read each bet's `what`, test and drop_if in `roadmap.md` before it goes anywhere: a customer or person named there travels with it. If one is, say which bet and let the person decide.
 
 # Roadmap
 
