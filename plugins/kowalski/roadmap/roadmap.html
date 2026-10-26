@@ -144,14 +144,19 @@
   .by a:hover, .by a:focus-visible { color: var(--ink); }
   .by b { font-weight: 650; }
   .by svg { width: 18px; height: 18px; }
+  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand .mark { width: 18px; height: 18px; flex: none; color: var(--ink); }
+  .brand a { color: inherit; text-decoration: none; font-weight: 650; }
+  .brand a:hover { color: var(--ink); }
   .where { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
 </style>
 </head>
 <body>
+<svg hidden><symbol id="penguin" viewBox="0 0 24 24"><path d="M6 21c-1.2-2.6-1.6-5.6-1.2-8.6C5.4 7.4 8.3 4 12.2 4c2.7 0 4.6 1.4 5.4 3.4L22 9l-4.4.9"/><path d="M17.6 9.9c.6 3.6 1.6 7.6 3.4 11.1"/><path d="M17.6 9.9c-3.4-.1-6.2 2-7.1 5.6-.4 1.8-.3 3.7.2 5.5"/><circle cx="13.8" cy="7.6" r=".75" fill="currentColor" stroke="none"/></symbol></svg>
 <div class="wrap">
   <header>
     <div>
-      <div class="eyebrow" id="eyebrow">Roadmap</div>
+      <div class="eyebrow brand"><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#penguin"/></svg><span>Roadmap powered by <a href="https://github.com/maciej-konczal/kowalski-analysis" target="_blank" rel="noopener noreferrer">kowalski</a></span><span id="updated"></span></div>
       <h1 id="name">Roadmap</h1>
       <p class="lede" id="lede" hidden>What we are building now, what comes next, and what we decided not to do. <b>Click any card for the details.</b></p>
     </div>
@@ -174,7 +179,7 @@
   </main>
   <footer class="by">
     <a href="https://github.com/maciej-konczal/kowalski-analysis" target="_blank" rel="noopener noreferrer">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21c-1.2-2.6-1.6-5.6-1.2-8.6C5.4 7.4 8.3 4 12.2 4c2.7 0 4.6 1.4 5.4 3.4L22 9l-4.4.9"/><path d="M17.6 9.9c.6 3.6 1.6 7.6 3.4 11.1"/><path d="M17.6 9.9c-3.4-.1-6.2 2-7.1 5.6-.4 1.8-.3 3.7.2 5.5"/><circle cx="13.8" cy="7.6" r=".75" fill="currentColor" stroke="none"/></svg>
+      <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#penguin"/></svg>
       <span>Roadmap powered by <b>kowalski</b></span>
     </a>
   </footer>
@@ -319,7 +324,7 @@
   if (S) {
     document.querySelector('.legend').hidden = true;
     document.getElementById('lede').hidden = false;
-    if (data.exported) document.getElementById('eyebrow').textContent = 'Roadmap · updated ' + when(data.exported) + (data.exported.slice(0, 4) === today.slice(0, 4) ? ', ' + data.exported.slice(0, 4) : '');
+    if (data.exported) document.getElementById('updated').textContent = '· updated ' + when(data.exported) + (data.exported.slice(0, 4) === today.slice(0, 4) ? ', ' + data.exported.slice(0, 4) : '');
     document.querySelector('nav [data-view="grid"]').textContent = 'Value vs effort';
   }
   const name = data.name ? pretty(data.name) : 'Roadmap';
