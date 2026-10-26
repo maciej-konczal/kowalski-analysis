@@ -7,6 +7,7 @@
 //   node product.mjs current bets               latest line per id, as a JSON array
 //   node product.mjs history <id>               every line for one bet
 //   node product.mjs render                     write .product/local/roadmap.html, print its path
+//   node product.mjs export                     a roadmap safe to send: .product/local/share/roadmap.html and roadmap.md, print both paths
 //   node product.mjs scratch <files...>         copy repo files into .product/local/scratch/<time>/ for a safe proof run
 //   node product.mjs append updates '<json>'    one day's update: { date, added: [...], planned: [...] }, the latest line per date wins
 //   node product.mjs changes <YYYY-MM-DD>       that day's commit subjects from git, as a JSON array
@@ -239,9 +240,42 @@ export function groupRoadmap(bets) {
   return { total: bets.length, columns, grid, unscored, saidNo };
 }
 
-export function renderRoadmap(bets, template, history = {}, name = '') {
-  const data = JSON.stringify({ ...groupRoadmap(bets), history, name }).replace(/</g, '\\u003c');
+export function renderRoadmap(bets, template, history = {}, name = '', shared = false) {
+  const data = JSON.stringify({ ...groupRoadmap(bets), history, name, shared }).replace(/</g, '\\u003c');
   return template.replace('{{DATA}}', () => data);
+}
+
+// What a shared roadmap may show. Evidence, briefs, history, proof and outcomes hold customer
+// context, and "for", test and drop_if often name people; none of them leaves the team.
+const SHAREABLE = ['id', 'what', 'status', 'impact', 'effort', 'owner', 'by', 'principle'];
+export function shareBets(bets) {
+  return bets.map((b) => Object.fromEntries(SHAREABLE.filter((k) => b[k] != null && b[k] !== '').map((k) => [k, b[k]])));
+}
+
+// The same board and grid as Markdown; GitHub, gists and Notion draw the mermaid quadrant chart.
+export function roadmapMarkdown(bets, name, day) {
+  const { columns, grid, unscored, saidNo } = groupRoadmap(bets);
+  const title = (b) => { const s = String(b.what); const i = s.indexOf(': '); return i > 8 && i < 90 ? s.slice(0, i) : s; };
+  const facts = (b) => [b.owner && 'owner ' + b.owner, b.by && 'by ' + b.by, b.impact && b.effort && `${b.impact} impact, ${b.effort} effort`].filter(Boolean);
+  const item = (b) => `- **${b.id}** ${title(b)}` + (facts(b).length ? ` (${facts(b).join(', ')})` : '');
+  const lanes = [['Now', 'building', columns.now], ['Next', 'picked', columns.next], ['Later', 'candidates', columns.later], ['Done', 'shipped, kept or killed', columns.done]];
+  const out = [`# ${name} roadmap`, '', `Exported ${day}. ` + lanes.map(([t, , list]) => `${t} ${list.length}`).join(' · ') + '.', ''];
+  for (const [t, sub, list] of lanes) out.push(`## ${t} (${sub})`, '', ...(list.length ? list.map(item) : ['Nothing here yet.']), '');
+  // x is effort, y is impact; points in one quadrant are spread so their labels do not overlap.
+  const label = (b) => `${b.id} ${title(b)}`.replace(/[^\p{L}\p{N} -]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  const at = (level, i, n) => (level === 'high' ? 0.55 : 0.05) + 0.4 * (i + 1) / (n + 1);
+  const points = Object.entries(grid).flatMap(([key, list]) => {
+    const [impact, effort] = key.split('-');
+    return list.map((b, i) => `  ${label(b)}: [${at(effort, i, list.length).toFixed(2)}, ${at(impact, list.length - 1 - i, list.length).toFixed(2)}]`);
+  });
+  out.push('## Impact vs effort', '');
+  if (points.length) {
+    out.push('```mermaid', 'quadrantChart', '  x-axis Low effort --> High effort', '  y-axis Low impact --> High impact',
+      '  quadrant-1 Test first', '  quadrant-2 Do first', '  quadrant-3 Maybe', '  quadrant-4 Say no', ...points, '```', '');
+  } else out.push('No open bet has an impact and effort yet.', '');
+  if (unscored.length) out.push('Not scored yet: ' + unscored.map((b) => `${b.id} ${title(b)}`).join('; ') + '.', '');
+  if (saidNo.length) out.push('## Said no', '', ...saidNo.map((b) => `- **${b.id}** ${title(b)}: no, by ${b.principle || '?'}`), '');
+  return out.join('\n');
 }
 
 // Daily updates: one line per day in .product/updates.jsonl, the latest line for a date wins.
@@ -629,7 +663,20 @@ function main(argv) {
     process.stdout.write(out + '\n');
     return;
   }
-  fail('usage: product.mjs init | scratch <files> | append bets|resources|updates <json> | current bets | history <id> | render | changes <date> | updates [--since date] | page-url [url] | check');
+  if (command === 'export') {
+    const shared = shareBets(currentBets(load(bets)));
+    const template = readFileSync(fileURLToPath(new URL('../roadmap/roadmap.html', import.meta.url)), 'utf8');
+    const dir = join(product, 'local', 'share');
+    mkdirSync(dir, { recursive: true });
+    const vision = join(product, 'vision.md');
+    const name = (existsSync(vision) && readVision(readFileSync(vision, 'utf8')).title) || basename(dirname(product));
+    const html = join(dir, 'roadmap.html'), md = join(dir, 'roadmap.md');
+    writeFileSync(html, renderRoadmap(shared, template, {}, name, true));
+    writeFileSync(md, roadmapMarkdown(shared, name, today()));
+    process.stdout.write(html + '\n' + md + '\n');
+    return;
+  }
+  fail('usage: product.mjs init | scratch <files> | append bets|resources|updates <json> | current bets | history <id> | render | export | changes <date> | updates [--since date] | page-url [url] | check');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));

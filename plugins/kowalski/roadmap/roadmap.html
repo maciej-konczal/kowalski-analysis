@@ -214,7 +214,7 @@
       el('div', { class: 'foot' },
         ev.length ? el('span', { class: 'ev', title: d + ' about what people do, ' + (ev.length - d) + ' about what they say' },
           ev.map((e) => el('i', { class: e.kind === 'behavior' ? '' : 'w' }))) : null,
-        el('span', {}, ev.length ? (d ? d + ' did' : '') + (d && ev.length - d ? ' · ' : '') + (ev.length - d ? (ev.length - d) + ' said' : '') : 'no evidence yet'),
+        data.shared ? null : el('span', {}, ev.length ? (d ? d + ' did' : '') + (d && ev.length - d ? ' · ' : '') + (ev.length - d ? (ev.length - d) + ' said' : '') : 'no evidence yet'),
         b.ref ? el('span', {}, b.ref) : null,
         b.owner ? el('span', { class: 'avatar', title: 'owner ' + b.owner }, initials(b.owner)) : null),
       b.test && !compact ? el('div', { class: 'test' }, el('b', {}, 'Test '), b.test, b.drop_if ? ' · drop if ' + b.drop_if : '') : null);
@@ -226,7 +226,7 @@
     const L = LANE[key];
     const s = el('section', { class: 'lane' + (bets.length ? '' : ' is-empty') },
       el('h2', {}, el('span', { class: 'dot', style: 'background:' + L.color }), L.title, el('span', { class: 'n' }, String(bets.length))));
-    if (!bets.length) s.append(el('div', { class: 'hint' }, L.hint.map((t, i) => i === 1 ? el('code', {}, t) : t)));
+    if (!bets.length && !data.shared) s.append(el('div', { class: 'hint' }, L.hint.map((t, i) => i === 1 ? el('code', {}, t) : t)));
     bets.forEach((b) => s.append(card(b)));
     return s;
   }
@@ -243,14 +243,14 @@
       detail ? el('p', { class: 'lead' }, detail) : null,
       el('dl', { class: 'facts' }, facts.map(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))])),
       b.brief ? [el('h3', {}, 'Brief'), el('dl', { class: 'facts' }, Object.entries(b.brief).map(([k, v]) => [el('dt', {}, k.replace('_', ' ')), el('dd', {}, v)]))] : null,
-      el('h3', {}, 'Evidence'),
-      evidence(b).length ? el('ul', { class: 'evlist' }, evidence(b).map((e) => el('li', {},
+      data.shared ? null : el('h3', {}, 'Evidence'),
+      data.shared ? null : evidence(b).length ? el('ul', { class: 'evlist' }, evidence(b).map((e) => el('li', {},
         el('span', { class: 'k ' + e.kind }, e.kind === 'behavior' ? 'did' : 'said'), e.says,
         el('span', { class: 'src' },
           host(e.source) ? el('a', { href: e.source, target: '_blank', rel: 'noopener noreferrer' }, host(e.source)) : e.source,
           ' · ' + e.date + ' · ' + ({ V: 'verified', S: 'read', U: 'unverified' }[e.mark] || e.mark)))))
         : el('p', { class: 'hint' }, 'No evidence recorded.'),
-      el('details', {}, el('summary', {}, 'History (' + (data.history[b.id] || []).length + ((data.history[b.id] || []).length === 1 ? ' line)' : ' lines)')),
+      data.shared ? null : el('details', {}, el('summary', {}, 'History (' + (data.history[b.id] || []).length + ((data.history[b.id] || []).length === 1 ? ' line)' : ' lines)')),
         el('ol', { class: 'hist' }, (data.history[b.id] || []).map((line) => el('li', {}, el('strong', {}, line.at + ' ' + line.status),
           el('pre', {}, Object.entries(line).filter(([k]) => !['id', 'at', 'status', 'evidence', 'what'].includes(k))
             .map(([k, v]) => k + ': ' + (typeof v === 'string' ? v : JSON.stringify(v))).join('\n'))))))].flat(Infinity).filter((x) => x != null));
@@ -258,6 +258,7 @@
   }
 
   const c = data.columns;
+  if (data.shared) document.querySelector('.legend').hidden = true;
   const name = data.name ? pretty(data.name) : 'Roadmap';
   document.getElementById('name').textContent = name;
   document.title = name + ' · Roadmap';
@@ -266,7 +267,7 @@
   const stat = (n, label, color) => el('div', { class: 'stat' }, el('b', { style: color ? 'color:' + color : '' }, String(n)), el('span', {}, label));
   document.getElementById('stats').append(
     stat(c.now.length, 'Now', 'var(--now)'), stat(c.next.length, 'Next', 'var(--next)'), stat(c.later.length, 'Later'),
-    stat(c.done.length, 'Done', 'var(--done)'), stat(evAll.filter((e) => e.kind === 'behavior').length + ' of ' + evAll.length, 'evidence is behavior'));
+    stat(c.done.length, 'Done', 'var(--done)'), data.shared ? '' : stat(evAll.filter((e) => e.kind === 'behavior').length + ' of ' + evAll.length, 'evidence is behavior'));
 
   const board = document.getElementById('board');
   if (!data.total) { document.getElementById('empty').hidden = false; board.hidden = true; }
