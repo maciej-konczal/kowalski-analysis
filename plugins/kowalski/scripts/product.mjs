@@ -240,14 +240,15 @@ export function groupRoadmap(bets) {
   return { total: bets.length, columns, grid, unscored, saidNo };
 }
 
-export function renderRoadmap(bets, template, history = {}, name = '', shared = false) {
-  const data = JSON.stringify({ ...groupRoadmap(bets), history, name, shared }).replace(/</g, '\\u003c');
+// share: { exported: 'YYYY-MM-DD' } renders the stakeholder page: plain labels, no evidence or history.
+export function renderRoadmap(bets, template, history = {}, name = '', share = null) {
+  const data = JSON.stringify({ ...groupRoadmap(bets), history, name, shared: !!share, exported: share?.exported ?? null }).replace(/</g, '\\u003c');
   return template.replace('{{DATA}}', () => data);
 }
 
 // What a shared roadmap may show. Evidence, briefs, history, proof and outcomes hold customer
-// context, and "for", test and drop_if often name people; none of them leaves the team.
-const SHAREABLE = ['id', 'what', 'status', 'impact', 'effort', 'owner', 'by', 'principle'];
+// context and stay with the team; test and drop_if go as "how we'll know" and "we stop if".
+const SHAREABLE = ['id', 'what', 'status', 'impact', 'effort', 'owner', 'by', 'test', 'drop_if', 'principle'];
 export function shareBets(bets) {
   return bets.map((b) => Object.fromEntries(SHAREABLE.filter((k) => b[k] != null && b[k] !== '').map((k) => [k, b[k]])));
 }
@@ -257,7 +258,8 @@ export function roadmapMarkdown(bets, name, day) {
   const { columns, grid, unscored, saidNo } = groupRoadmap(bets);
   const title = (b) => { const s = String(b.what); const i = s.indexOf(': '); return i > 8 && i < 90 ? s.slice(0, i) : s; };
   const facts = (b) => [b.owner && 'owner ' + b.owner, b.by && 'by ' + b.by, b.impact && b.effort && `${b.impact} impact, ${b.effort} effort`].filter(Boolean);
-  const item = (b) => `- **${b.id}** ${title(b)}` + (facts(b).length ? ` (${facts(b).join(', ')})` : '');
+  const item = (b) => [`- **${b.id}** ${title(b)}` + (facts(b).length ? ` (${facts(b).join(', ')})` : ''),
+    b.test && `  - How we'll know it works: ${b.test}`, b.drop_if && `  - We stop if: ${b.drop_if}`].filter(Boolean).join('\n');
   const lanes = [['Now', 'building', columns.now], ['Next', 'picked', columns.next], ['Later', 'candidates', columns.later], ['Done', 'shipped, kept or killed', columns.done]];
   const out = [`# ${name} roadmap`, '', `Exported ${day}. ` + lanes.map(([t, , list]) => `${t} ${list.length}`).join(' · ') + '.', ''];
   for (const [t, sub, list] of lanes) out.push(`## ${t} (${sub})`, '', ...(list.length ? list.map(item) : ['Nothing here yet.']), '');
@@ -671,7 +673,7 @@ function main(argv) {
     const vision = join(product, 'vision.md');
     const name = (existsSync(vision) && readVision(readFileSync(vision, 'utf8')).title) || basename(dirname(product));
     const html = join(dir, 'roadmap.html'), md = join(dir, 'roadmap.md');
-    writeFileSync(html, renderRoadmap(shared, template, {}, name, true));
+    writeFileSync(html, renderRoadmap(shared, template, {}, name, { exported: today() }));
     writeFileSync(md, roadmapMarkdown(shared, name, today()));
     process.stdout.write(html + '\n' + md + '\n');
     return;

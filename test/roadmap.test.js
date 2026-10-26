@@ -62,25 +62,32 @@ test('render writes the page into .product/local/ and prints its path', () => {
 });
 
 const private_ = {
-  for: 'Acme Corp buyers', test: 'ask Jane at Acme', drop_if: 'Jane says no', ref: 'ENG-7', brief: { who: 'Jane' },
+  for: 'Acme Corp buyers', ref: 'ENG-7', brief: { who: 'Jane' },
   evidence: [{ source: 'call with Acme', date: '2026-10-01', mark: 'S', kind: 'words', says: 'Acme wants it' }],
   proof: 'acme output', signal: 'Acme replies', outcome: 'Acme kept it',
 };
+const plan = { test: 'twenty known questions', drop_if: 'under ten points better' };
 
-test('a shared bet keeps what the board needs and drops customer context', () => {
-  const [b] = shareBets([bet('a', 'picked', { impact: 'high', effort: 'low', owner: 'Ann', by: '2026-11-01', ...private_ })]);
-  assert.deepEqual(b, { id: 'a', what: 'bet a', status: 'picked', impact: 'high', effort: 'low', owner: 'Ann', by: '2026-11-01' });
+test('a shared bet keeps what the board and its details need, and drops customer context', () => {
+  const [b] = shareBets([bet('a', 'picked', { impact: 'high', effort: 'low', owner: 'Ann', by: '2026-11-01', ...plan, ...private_ })]);
+  assert.deepEqual(b, { id: 'a', what: 'bet a', status: 'picked', impact: 'high', effort: 'low', owner: 'Ann', by: '2026-11-01', ...plan });
+});
+
+test('the shared page carries the export date for its header', () => {
+  const html = renderRoadmap([], '{{DATA}}', {}, 'demo', { exported: '2026-10-26' });
+  assert.match(html, /"shared":true,"exported":"2026-10-26"/);
+  assert.match(renderRoadmap([], '{{DATA}}'), /"shared":false,"exported":null/);
 });
 
 test('markdown has the lanes, a mermaid quadrant per scored bet, unscored and said-no', () => {
   const md = roadmapMarkdown([
-    bet('a', 'building', { what: 'Retrieval eval: twenty questions with known answers', impact: 'high', effort: 'low', owner: 'Ann' }),
+    bet('a', 'building', { what: 'Retrieval eval: twenty questions with known answers', impact: 'high', effort: 'low', owner: 'Ann', ...plan }),
     bet('b', 'candidate', { impact: 'low', effort: 'high' }), bet('c', 'candidate'),
     bet('d', 'said-no', { principle: '2 serve the meeting loop first' }),
   ], 'Demo', '2026-10-26');
   assert.match(md, /^# Demo roadmap/);
   assert.match(md, /Exported 2026-10-26\. Now 1 · Next 0 · Later 2 · Done 0\./);
-  assert.match(md, /- \*\*a\*\* Retrieval eval \(owner Ann, high impact, low effort\)/);
+  assert.match(md, /- \*\*a\*\* Retrieval eval \(owner Ann, high impact, low effort\)\n  - How we'll know it works: twenty known questions\n  - We stop if: under ten points better/);
   assert.match(md, /```mermaid\nquadrantChart/);
   assert.match(md, /  a Retrieval eval: \[0\.25, 0\.75\]/, 'high impact, low effort sits top left (do first)');
   assert.match(md, /  b bet b: \[0\.75, 0\.25\]/, 'low impact, high effort sits bottom right (say no)');
