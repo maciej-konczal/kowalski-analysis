@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Roadmap</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 21c-1.2-2.6-1.6-5.6-1.2-8.6C5.4 7.4 8.3 4 12.2 4c2.7 0 4.6 1.4 5.4 3.4L22 9l-4.4.9'/%3E%3Cpath d='M17.6 9.9c.6 3.6 1.6 7.6 3.4 11.1'/%3E%3Cpath d='M17.6 9.9c-3.4-.1-6.2 2-7.1 5.6-.4 1.8-.3 3.7.2 5.5'/%3E%3Ccircle cx='13.8' cy='7.6' r='.9' fill='%2371717a' stroke='none'/%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #f6f5f2; --glow: #e9e4ff; --panel: #ffffff; --raised: #ffffff; --ink: #18181b; --muted: #71717a; --faint: #a1a1aa;
@@ -138,6 +139,11 @@
   .nos .row { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
   .nos .card { margin: 0; opacity: .85; }
   .answer { margin: 0 0 6px; font-size: 14px; }
+  .by { display: flex; justify-content: center; padding: 0 0 40px; }
+  .by a { display: inline-flex; align-items: center; gap: 8px; color: var(--faint); text-decoration: none; font-size: 12px; transition: color .12s ease; }
+  .by a:hover, .by a:focus-visible { color: var(--ink); }
+  .by b { font-weight: 650; }
+  .by svg { width: 18px; height: 18px; }
   .where { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
 </style>
 </head>
@@ -166,6 +172,12 @@
       <div class="aside" id="aside"></div>
     </div>
   </main>
+  <footer class="by">
+    <a href="https://github.com/maciej-konczal/kowalski-analysis" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21c-1.2-2.6-1.6-5.6-1.2-8.6C5.4 7.4 8.3 4 12.2 4c2.7 0 4.6 1.4 5.4 3.4L22 9l-4.4.9"/><path d="M17.6 9.9c.6 3.6 1.6 7.6 3.4 11.1"/><path d="M17.6 9.9c-3.4-.1-6.2 2-7.1 5.6-.4 1.8-.3 3.7.2 5.5"/><circle cx="13.8" cy="7.6" r=".75" fill="currentColor" stroke="none"/></svg>
+      <span>Roadmap powered by <b>kowalski</b></span>
+    </a>
+  </footer>
 </div>
 <dialog id="detail"><div class="sheet" id="sheet"></div><form method="dialog" class="close"><button autofocus>Close</button></form></dialog>
 <script type="application/json" id="data">{{DATA}}</script>
